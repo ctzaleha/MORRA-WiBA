@@ -89,6 +89,7 @@ class Deployer extends Player{
 class Attacher extends Player{
     constructor(props){
         super(props);
+        console.log(props)
         this.state = {view: 'Attach'};
     }
     attach(ctcInfoStr){
