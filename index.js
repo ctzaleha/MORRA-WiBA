@@ -14,7 +14,7 @@ reach.setWalletFallback(reach.walletFallback({
 
 const handToInt = [0, 1, 2, 3, 4, 5];
 const GUESS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];  
-const intToOutcome = ['Zaleha wins', 'Draw', 'Faizan wins'];
+const intToOutcome = ['Bob wins', 'Draw', 'Alice wins'];
 const {standardUnit} = reach;
 const defaults = {defaultFundAmt: '10', defaultWager: '3', standardUnit};
 
@@ -79,7 +79,7 @@ class Deployer extends Player{
             this.setState({view: 'Deploying', ctc});
             this.wager = reach.parseCurrency(this.state.wager);
             this.deadline = { ETH: 100, ALGO: 100, CFX: 1000}[reach.connector];
-            backend.Faizan(ctc, this);
+            backend.Alice(ctc, this);
             const ctcInfoStr = JSON.stringify(await ctc.getInfo(), null, 2);
             this.setState({view: 'WaitingForAttacher', ctcInfoStr});
         }
@@ -89,13 +89,12 @@ class Deployer extends Player{
 class Attacher extends Player{
     constructor(props){
         super(props);
-        console.log(props)
         this.state = {view: 'Attach'};
     }
     attach(ctcInfoStr){
         const ctc = this.props.acc.contract(backend, JSON.parse(ctcInfoStr));
         this.setState({view: 'Attaching'});
-        backend.Zaleha(ctc, this);
+        backend.Bob(ctc, this);
     }
     async acceptWager(wagerAtomic){
         const wager = reach.formatCurrency(wagerAtomic, 4);

@@ -1,18 +1,18 @@
 'reach 0.1';
 
-const[gameOutcome, F_WINS, Z_WINS, DRAW] = makeEnum(3);
+const[gameOutcome, A_WINS, B_WINS, DRAW] = makeEnum(3);
 
-const winner = (playHandF, playHandZ, gHandF, gHandZ)=> {
-    if(gHandF == gHandZ){
+const winner = (playHandA, playHandB, gHandA, gHandB)=> {
+    if(gHandA == gHandB){
         return DRAW;
     }
     else{
-        if(gHandF == (playHandF + playHandZ)){
-            return F_WINS;
+        if(gHandA == (playHandA + playHandB)){
+            return A_WINS;
         }
         else{
-            if(gHandZ == (playHandF + playHandZ)){
-                return Z_WINS;
+            if(gHandB == (playHandA + playHandB)){
+                return B_WINS;
             }
             else{
                 return DRAW;
@@ -21,8 +21,8 @@ const winner = (playHandF, playHandZ, gHandF, gHandZ)=> {
     }
 };
 
-assert(winner(0,4,0,4)== F_WINS);
-assert(winner(4,0,4,0)== Z_WINS);
+assert(winner(0,4,0,4)== B_WINS);
+assert(winner(4,0,4,0)== A_WINS);
 assert(winner(0,1,0,4)== DRAW);
 assert(winner(5,5,5,5)== DRAW);
 
@@ -46,89 +46,89 @@ const Shared = {
 };
 
 export const main = Reach.App(() =>{
-    const Faizan = Participant('Faizan', {
+    const Alice = Participant('Alice', {
         ...Shared,
         wager: UInt,
         deadline: UInt,
     });
-    const Zaleha = Participant('Zaleha',{
+    const Bob = Participant('Bob',{
         ...Shared,
         acceptWager: Fun([UInt],Null),
     });
     init();
 
     const informTimeout = () => {
-        each([Faizan,Zaleha], () => {
+        each([Alice,Bob], () => {
             interact.informTimeout();
         });
     };
 
-    Faizan.only(() => {
+    Alice.only(() => {
         const amt = declassify(interact.wager);
         const time = declassify(interact.deadline);
     });
-    Faizan.publish(amt,time)
+    Alice.publish(amt,time)
      .pay(amt);
     commit();
 
-    Zaleha.interact.acceptWager(amt);
-    Zaleha.pay(amt)
-     .timeout(relativeTime(time), () => closeTo(Faizan, informTimeout));
+    Bob.interact.acceptWager(amt);
+    Bob.pay(amt)
+     .timeout(relativeTime(time), () => closeTo(Alice, informTimeout));
      
     var outcome = DRAW;
     invariant(balance() == 2 * amt && gameOutcome(outcome));
     while(outcome == DRAW){
         commit();
 
-        Faizan.only(() => {
-            const _playHandF = interact.getHand();
-            const _gHandF = interact.getGuess();
+        Alice.only(() => {
+            const _playHandA = interact.getHand();
+            const _gHandA = interact.getGuess();
 
-            const [_commitF,_saltF] = makeCommitment(interact,_playHandF);
-            const commitF = declassify(_commitF);
-            const[_guessCommitF, _guessSaltF] = makeCommitment(interact,_gHandF);
-            const guessCommitF = declassify(_guessCommitF);
+            const [_commitA,_saltA] = makeCommitment(interact,_playHandA);
+            const commitA = declassify(_commitA);
+            const[_guessCommitA, _guessSaltA] = makeCommitment(interact,_gHandA);
+            const guessCommitA = declassify(_guessCommitA);
         });
 
-        Faizan.publish(commitF, _guessCommitF)
-         .timeout(relativeTime(time), () => closeTo(Zaleha, informTimeout));
+        Alice.publish(commitA, guessCommitA)
+         .timeout(relativeTime(time), () => closeTo(Bob, informTimeout));
         commit();
 
-        unknowable(Zaleha, Faizan(_playHandF, _saltF));
-        unknowable(Zaleha, Faizan(_gHandF, _guessSaltF));
+        unknowable(Bob, Alice(_playHandA, _saltA));
+        unknowable(Bob, Alice(_gHandA, _guessSaltA));
 
-        Zaleha.only(() =>{
-            const _playHandZ = interact.getHand();
-            const _gHandZ = interact.getGuess();
-            const playHandZ = declassify(_playHandZ);
-            const gHandZ = declassify(_gHandZ);
+        Bob.only(() =>{
+            const _playHandB = interact.getHand();
+            const _gHandB = interact.getGuess();
+            const playHandB = declassify(_playHandB);
+            const gHandB = declassify(_gHandB);
         });
 
-        Zaleha.publish(playHandZ,gHandZ)
-         .timeout(relativeTime(time), () => closeTo(Faizan, informTimeout));
+        Bob.publish(playHandB,gHandB)
+         .timeout(relativeTime(time), () => closeTo(Alice, informTimeout));
         commit();
 
-        Faizan.only(() => {
-            const [saltF, playHandF] = declassify([_saltF, _playHandF]);
-            const [guessSaltF, gHandF] = declassify([_guessSaltF,_gHandF]);
+        Alice.only(() => {
+            const [saltA, playHandA] = declassify([_saltA, _playHandA]);
+            const [guessSaltA, gHandA] = declassify([_guessSaltA,_gHandA]);
         })
 
-        Faizan.publish(saltF, playHandF, guessSaltF, _gHandF)
-         .timeout(relativeTime(time), () => closeTo(Zaleha, informTimeout));
+        Alice.publish(saltA, playHandA, guessSaltA, gHandA)
+         .timeout(relativeTime(time), () => closeTo(Bob, informTimeout));
 
-        checkCommitment(commitF, saltF, playHandF);
-        checkCommitment(guessCommitF, guessSaltF, gHandF);
+        checkCommitment(commitA, saltA, playHandA);
+        checkCommitment(guessCommitA, guessSaltA, gHandA);
 
 
-      outcome = winner(playHandF, playHandZ, gHandF, gHandZ);
+      outcome = winner(playHandA, playHandB, gHandA, gHandB);
       continue;
 
     }//end of while loop
-    assert(outcome == F_WINS || outcome == Z_WINS);
-    transfer(2 * amt).to(outcome == F_WINS ? Faizan : Zaleha);
+    assert(outcome == A_WINS || outcome == B_WINS);
+    transfer(2 * amt).to(outcome == A_WINS ? Alice : Bob);
     commit();
 
-    each([Faizan, Zaleha], () => {
+    each([Alice, Bob], () => {
         interact.seeOutcome(outcome);
     });
     exit();

@@ -2,11 +2,12 @@ import { loadStdlib, ask } from "@reach-sh/stdlib";
 import * as backend from './build/index.main.mjs';
 const stdlib = loadStdlib();
 
-const isFaizan = await ask.ask(
-    `Are you Faizan?`,
+const iAlice = await ask.ask(
+    `Are you Alice?`,
     ask.yesno
 );
-const who = iFaizan ? 'Faizan' : 'Zaleha';
+const isAlice = await ask.ask();
+const who = iAlice ? 'Alice' : 'Bob';
 console.log(`Starting Morra games! as ${who}`);
 
 let acc = null;
@@ -26,7 +27,7 @@ else{
 }
 
 let ctc = null;
-if(isFaizan){
+if(isAlice){
     ctc = acc.contract(backend);
     ctc.getInfo().then((info) => {
         console.log(`The contract is deployed as = ${JSON.stringify(info)}`);});
@@ -51,7 +52,7 @@ interact.informTimeout = () => {
     process.exit(1);
 };
 
-if(isFaizan){
+if(isAlice){
     const amt = await ask.ask(
         `How much do you want to wager?`,
         stdlib.parseCurrency
@@ -95,13 +96,13 @@ interact.getHand = async () => {
 };
 
 //outcome function
-const OUTCOME = ['Zaleha wins', 'Draw', 'Faizan wins'];
+const OUTCOME = ['Bob wins', 'Draw', 'Alice wins'];
 interact.seeOutcome = async (outcome) => {
     console.log(`The outcome is: ${OUTCOME[outcome]}`);
 };
 
 //participant
-const part = iFaizan ? ctc.pFaizan : ctc.p.Zaleha;
+const part = iAlice ? ctc.pAlice : ctc.p.Bob;
 await part(interact);
 
 const after = await getBalance();
